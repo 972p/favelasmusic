@@ -1,12 +1,22 @@
 [
   {
-    "id": "cc6cc0d7-1d5c-4a9a-8240-375e3d6e1e06",
-    "title": "ANGELE",
-    "bpm": 123,
-    "key": "G Minor",
-    "coverPath": "/uploads/1771526713355-538977062-8ad2b871-02c0-4b97-95f3-34682e745be0.gif",
-    "audioPath": "/uploads/1771526713351-Ang-le---Balance-Ton-Quoi--CLIP-OFFICIEL-.mp3",
+    "id": "726d7536-7737-49ab-8206-fee591482e5d",
+    "title": "EXODIA",
+    "bpm": 118,
+    "key": "A# Minor",
+    "coverPath": "/uploads/1771536177050-07c468111c15c499f8ddf4e15260b929.jpg",
+    "audioPath": "/uploads/1771536177047-Cherry-Pie---EXODIA.mp3",
     "description": "",
-    "createdAt": "2026-02-19T18:45:13.357Z"
+    "createdAt": "2026-02-19T21:22:57.052Z"
+  },
+  {
+    "id": "417ad52e-061e-4f09-ad08-8b7addeb11d2",
+    "title": "MARCO",
+    "bpm": 154,
+    "key": "C Minor",
+    "coverPath": "/uploads/1771536593577-79d972971fcbda01e25a17c0eee4eca9.gif",
+    "audioPath": "/uploads/1771536593575-CONSTANCE-V2.mp3",
+    "description": "",
+    "createdAt": "2026-02-19T21:29:53.578Z"
   }
 ]

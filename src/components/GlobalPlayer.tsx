@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAudioStore } from "@/store/useAudioStore";
 import { useToastStore } from "@/store/useToastStore";
-import { Play, Pause, Volume2, VolumeX, X } from "lucide-react"; 
+import { Play, Pause, Volume2, VolumeX, X, Music, ChevronUp, ChevronDown } from "lucide-react"; 
 import WaveSurfer from "wavesurfer.js";
 import { formatTime, cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -25,6 +25,7 @@ function PlayerContent() {
   const wavesurfer = useRef<WaveSurfer | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [showInfoPanel, setShowInfoPanel] = useState(false);
 
   // Initialize WaveSurfer
   useEffect(() => {
@@ -119,6 +120,8 @@ function PlayerContent() {
   
   if (!currentBeat) return null;
 
+  const hasBpmOrKey = (currentBeat.bpm && currentBeat.bpm > 0) || (currentBeat.key && currentBeat.key.trim() !== "");
+
   return (
         <motion.div 
             initial={{ y: 100, opacity: 0 }}
@@ -126,6 +129,83 @@ function PlayerContent() {
             exit={{ y: 100, opacity: 0 }}
             className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-4 pointer-events-none"
         >
+            {/* Expanded Info Panel */}
+            <AnimatePresence>
+                {showInfoPanel && hasBpmOrKey && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                        className="max-w-4xl mx-auto mb-3 pointer-events-auto"
+                    >
+                        <div 
+                            className="relative bg-black/60 backdrop-blur-2xl border border-white/10 rounded-2xl p-6 overflow-hidden"
+                            style={{ boxShadow: "0 -10px 40px rgba(0,0,0,0.4)" }}
+                        >
+                            {/* Subtle animated gradient background */}
+                            <div 
+                                className="absolute inset-0 opacity-[0.07] rounded-2xl"
+                                style={{
+                                    background: "linear-gradient(135deg, #fff 0%, transparent 40%, transparent 60%, #fff 100%)",
+                                    backgroundSize: "200% 200%",
+                                    animation: "liquid 8s ease-in-out infinite",
+                                }}
+                            />
+
+                            <div className="relative flex items-center justify-center gap-8">
+                                {/* Cover Art Large */}
+                                <div className="w-20 h-20 rounded-xl overflow-hidden bg-white/5 flex-shrink-0 border border-white/10">
+                                    {currentBeat.coverPath ? (
+                                        <img src={currentBeat.coverPath} alt={currentBeat.title} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center">
+                                            <Music className="w-8 h-8 text-white/20" />
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Track Info */}
+                                <div className="flex flex-col items-start gap-1">
+                                    <h2 className="text-lg font-semibold text-white tracking-wide">{currentBeat.title}</h2>
+                                    
+                                    {/* BPM & Key Display - Large */}
+                                    <div className="flex items-center gap-4 mt-1">
+                                        {currentBeat.bpm > 0 && (
+                                            <div className="flex items-baseline gap-2">
+                                                <span 
+                                                    className="text-4xl font-bold text-white tracking-tight tabular-nums"
+                                                    style={{ fontVariantNumeric: "tabular-nums" }}
+                                                >
+                                                    {currentBeat.bpm}
+                                                </span>
+                                                <span className="text-sm font-medium text-zinc-400 uppercase tracking-widest">BPM</span>
+                                            </div>
+                                        )}
+                                        
+                                        {currentBeat.bpm > 0 && currentBeat.key && currentBeat.key.trim() !== "" && (
+                                            <div className="w-px h-10 bg-white/10" />
+                                        )}
+                                        
+                                        {currentBeat.key && currentBeat.key.trim() !== "" && (
+                                            <div className="flex items-baseline gap-2">
+                                                <span className="text-4xl font-bold text-white tracking-tight">
+                                                    {currentBeat.key.split(" ")[0]}
+                                                </span>
+                                                <span className="text-sm font-medium text-zinc-400 uppercase tracking-widest">
+                                                    {currentBeat.key.split(" ").slice(1).join(" ") || "Key"}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Main Player Bar */}
             <div className="max-w-4xl mx-auto bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-4 overflow-hidden pointer-events-auto">
                 <div className="flex items-center gap-4">
                     {/* Cover Art (Small) */}
@@ -140,14 +220,45 @@ function PlayerContent() {
                     {/* Controls & Waveform */}
                     <div className="flex-1 flex flex-col gap-1 min-w-0">
                         <div className="flex items-center justify-between">
-                             <div className="flex flex-col truncate">
-                                <h3 className="text-sm font-medium text-white truncate">{currentBeat.title}</h3>
-                                <span className="text-xs text-zinc-400">
-                                    {formatTime(currentTime)} / {formatTime(duration)}
-                                </span>
+                             <div className="flex items-center gap-3 truncate">
+                                <div className="flex flex-col truncate">
+                                    <h3 className="text-sm font-medium text-white truncate">{currentBeat.title}</h3>
+                                    <span className="text-xs text-zinc-400">
+                                        {formatTime(currentTime)} / {formatTime(duration)}
+                                    </span>
+                                </div>
+                                
+                                {/* Inline BPM/Key Badges */}
+                                {hasBpmOrKey && (
+                                    <div className="hidden sm:flex items-center gap-1.5 flex-shrink-0">
+                                        {currentBeat.bpm > 0 && (
+                                            <span className="px-2 py-0.5 rounded-md bg-white/[0.07] border border-white/10 text-xs font-medium text-zinc-300 tabular-nums">
+                                                {currentBeat.bpm} BPM
+                                            </span>
+                                        )}
+                                        {currentBeat.key && currentBeat.key.trim() !== "" && (
+                                            <span className="px-2 py-0.5 rounded-md bg-white/[0.07] border border-white/10 text-xs font-medium text-zinc-300">
+                                                {currentBeat.key}
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
                              </div>
                              
-                             <div className="flex items-center gap-3">
+                             <div className="flex items-center gap-2">
+                                 {/* Expand info button */}
+                                 {hasBpmOrKey && (
+                                     <button 
+                                         onClick={() => setShowInfoPanel(!showInfoPanel)} 
+                                         className={cn(
+                                             "text-zinc-500 hover:text-white transition-colors",
+                                             showInfoPanel && "text-white"
+                                         )}
+                                         title={showInfoPanel ? "Masquer les infos" : "Voir BPM & Clé"}
+                                     >
+                                         {showInfoPanel ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                                     </button>
+                                 )}
                                  <button onClick={togglePlay} className="text-white hover:text-zinc-300 transition-colors">
                                      {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current" />}
                                  </button>
