@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { formatTime, cn } from '@/lib/utils';
 import { useToastStore } from '@/store/useToastStore';
 import { ConfirmModal } from '@/components/ui/ConfirmModal'; 
+import { analyzeAudio } from '@/lib/audio-analysis';
 
 const MUSICAL_KEYS = [
   "C Major", "C Minor",
@@ -21,7 +22,31 @@ const MUSICAL_KEYS = [
   "A Major", "A Minor",
   "A# Major", "A# Minor",
   "B Major", "B Minor"
-]; 
+];
+
+// Helper to normalize key from Essentia
+const normalizeKey = (key: string) => {
+    // Essentia returns "C major", "C minor" etc.
+    // Capitalize first letter
+    let normalized = key.charAt(0).toUpperCase() + key.slice(1);
+    // Replace "major" with "Major", "minor" with "Minor"
+    normalized = normalized.replace("major", "Major").replace("minor", "Minor");
+    
+    // Map flats to sharps to match our list if needed
+    // "Db" -> "C#", "Eb" -> "D#", "Gb" -> "F#", "Ab" -> "G#", "Bb" -> "A#"
+    // Note: Essentia might return "Bb" or "A#".
+    const flatToSharp: {[key: string]: string} = {
+        "Db": "C#", "Eb": "D#", "Gb": "F#", "Ab": "G#", "Bb": "A#"
+    };
+    
+    // Check if the root note is in our map
+    const parts = normalized.split(' ');
+    if (parts.length === 2 && flatToSharp[parts[0]]) {
+        return `${flatToSharp[parts[0]]} ${parts[1]}`;
+    }
+    
+    return normalized;
+};
 
 interface Beat {
   id: string;
@@ -53,8 +78,8 @@ export default function AdminPage() {
   const { addToast } = useToastStore();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   
-  // Upload State
   const [loading, setLoading] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
   const [coverName, setCoverName] = useState<string | null>(null);
   const [audioName, setAudioName] = useState<string | null>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -98,6 +123,58 @@ export default function AdminPage() {
     } else {
         setter(null);
     }
+  };
+
+  const handleAudioChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+          setAudioName(file.name);
+          setAnalyzing(true);
+          addToast("Analyzing audio for BPM and Key...", "info");
+          
+          try {
+              const result = await analyzeAudio(file);
+              console.log("Analysis result:", result);
+              
+              if (result) {
+                  // Find the form to update values
+                  // Since we are in a component, we can access the form elements via refs or direct DOM if needed
+                  // Better: use state or just direct DOM manipulation if we are not using controlled inputs for these fields
+                  // The form inputs are uncontrolled (native inputs)
+                  
+                  const bpmInput = document.querySelector('input[name="bpm"]') as HTMLInputElement;
+                  const keySelect = document.querySelector('select[name="key"]') as HTMLSelectElement;
+                  
+                  if (bpmInput) {
+                      bpmInput.value = result.bpm.toString();
+                      // trigger change event just in case
+                      // bpmInput.dispatchEvent(new Event('change', { bubbles: true }));
+                  }
+                  
+                  if (keySelect) {
+                      let detectedKey = normalizeKey(result.key);
+                      // Check if valid
+                      if (MUSICAL_KEYS.includes(detectedKey)) {
+                          keySelect.value = detectedKey;
+                      } else {
+                          // Try to find a close match
+                          console.log("Key not found in list:", detectedKey);
+                      }
+                  }
+                  
+                  addToast(`Detected: ${result.bpm} BPM, ${normalizeKey(result.key)}`, "success");
+              } else {
+                  addToast("Could not detect BPM/Key, please enter manually", "error");
+              }
+          } catch (err) {
+              console.error(err);
+              addToast("Analysis failed", "error");
+          } finally {
+              setAnalyzing(false);
+          }
+      } else {
+          setAudioName(null);
+      }
   };
 
   async function handleUploadSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -322,11 +399,13 @@ export default function AdminPage() {
                         )}>
                              <input 
                                 ref={audioInputRef} name="audio" type="file" accept="audio/*" required 
-                                onChange={(e) => handleFileChange(e, setAudioName)}
+                                onChange={handleAudioChange}
                                 className="absolute inset-0 opacity-0 cursor-pointer"
                              />
                              <FileAudio className={cn("w-8 h-8 transition-colors", audioName ? "text-green-500" : "text-zinc-700 group-hover:text-zinc-500")} />
-                             <span className="text-xs uppercase tracking-widest text-zinc-500">{audioName || "Drop Audio File"}</span>
+                             <span className="text-xs uppercase tracking-widest text-zinc-500">
+                                {analyzing ? "Analyzing..." : (audioName || "Drop Audio File")}
+                             </span>
                         </div>
 
                         {/* Cover Drop */}
