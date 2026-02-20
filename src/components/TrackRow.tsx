@@ -81,7 +81,7 @@ export function TrackRow({ beat, index }: TrackRowProps) {
                     )}>
                         {beat.title}
                     </h4>
-                    {beat.forSale && beat.price !== undefined && (
+                    {beat.for_sale && beat.price !== undefined && (
                         <button
                             onClick={handleCheckout}
                             className="md:hidden px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-500/20 text-green-400 hover:bg-green-500 hover:text-black transition-colors"
@@ -114,7 +114,7 @@ export function TrackRow({ beat, index }: TrackRowProps) {
 
             {/* Desktop: Metadata + Interactions */}
             <div className="hidden sm:flex items-center gap-4 md:gap-6 text-xs text-zinc-500 font-mono">
-                {beat.forSale && beat.price !== undefined && (
+                {beat.for_sale && beat.price !== undefined && (
                     <button
                         className="opacity-0 group-hover:opacity-100 flex items-center gap-1.5 px-2.5 py-1.5 bg-white/10 hover:bg-white text-white hover:text-black rounded transition-all duration-300 font-sans text-xs font-bold uppercase tracking-wider"
                         onClick={handleCheckout}
@@ -137,7 +137,7 @@ export function TrackRow({ beat, index }: TrackRowProps) {
                         title="Like"
                     >
                         <ThumbsUp className={`w-3.5 h-3.5 ${interaction === 'like' ? 'fill-current' : ''}`} />
-                        <span>{Math.max(0, (beat.likeCount || 0) + optLike)}</span>
+                        <span>{Math.max(0, (beat.like_count || 0) + optLike)}</span>
                     </button>
                     <button
                         onClick={(e) => { e.stopPropagation(); toggleDislike(beat.id); }}
@@ -149,7 +149,7 @@ export function TrackRow({ beat, index }: TrackRowProps) {
                         title="Dislike"
                     >
                         <ThumbsDown className={`w-3.5 h-3.5 ${interaction === 'dislike' ? 'fill-current' : ''}`} />
-                        <span>{Math.max(0, (beat.dislikeCount || 0) + optDislike)}</span>
+                        <span>{Math.max(0, (beat.dislike_count || 0) + optDislike)}</span>
                     </button>
                 </div>
 

@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { deleteBeat, updateBeat } from '@/lib/storage';
-import fs from 'fs';
-import path from 'path';
-
-const UPLOADS_DIR = path.join(process.cwd(), 'public', 'uploads');
+import { deleteBeat, getBeat, updateBeat, uploadFile, deleteFile } from '@/lib/storage';
 
 export async function DELETE(
-  request: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
   if (!id) return NextResponse.json({ error: 'Beat ID required' }, { status: 400 });
-  const success = deleteBeat(id);
+  const success = await deleteBeat(id);
   if (success) return NextResponse.json({ success: true });
   return NextResponse.json({ error: 'Beat not found' }, { status: 404 });
 }
@@ -26,10 +22,9 @@ export async function PATCH(
   try {
     const contentType = request.headers.get('content-type') || '';
 
-    // ── Metadata + optional cover (FormData) ────────────────────────────────
+    // ── Metadata + optional cover (FormData) ───────────────────────────────
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData();
-
       const updates: Record<string, unknown> = {};
 
       const title = formData.get('title') as string | null;
@@ -44,43 +39,34 @@ export async function PATCH(
       if (description !== null) updates.description = description;
       if (bpm !== null) updates.bpm = parseInt(bpm, 10) || 0;
       if (key !== null) updates.key = key;
-      if (forSale !== null) updates.forSale = forSale === 'true';
+      if (forSale !== null) updates.for_sale = forSale === 'true';
       if (price !== null) updates.price = parseFloat(price) || 0;
 
       // Handle new cover upload
       if (coverFile && coverFile.size > 0) {
-        const ext = coverFile.name.split('.').pop() || 'jpg';
-        const filename = `cover_${id}_${Date.now()}.${ext}`;
-        const destPath = path.join(UPLOADS_DIR, filename);
-        if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-        const buffer = Buffer.from(await coverFile.arrayBuffer());
-        fs.writeFileSync(destPath, buffer);
-        updates.coverPath = `/uploads/${filename}`;
+        // Delete old cover from storage
+        const existing = await getBeat(id);
+        if (existing?.cover_path) await deleteFile(existing.cover_path);
+        updates.cover_path = await uploadFile(coverFile, 'covers');
       }
 
-      const updated = updateBeat(id, updates);
+      const updated = await updateBeat(id, updates);
       if (updated) return NextResponse.json(updated);
       return NextResponse.json({ error: 'Beat not found' }, { status: 404 });
     }
 
-    // ── Like/Dislike only (JSON) ────────────────────────────────────────────
+    // ── Like / Dislike only (JSON) ─────────────────────────────────────────
     const body = await request.json();
-    const { likeDelta, dislikeDelta } = body;
+    const { likeDelta = 0, dislikeDelta = 0 } = body;
 
-    const beats: any[] = (() => {
-      const file = path.join(process.cwd(), 'data', 'beats.json');
-      if (fs.existsSync(file)) return JSON.parse(fs.readFileSync(file, 'utf-8'));
-      return [];
-    })();
+    const beat = await getBeat(id);
+    if (!beat) return NextResponse.json({ error: 'Beat not found' }, { status: 404 });
 
-    const beatIndex = beats.findIndex((b: any) => b.id === id);
-    if (beatIndex === -1) return NextResponse.json({ error: 'Beat not found' }, { status: 404 });
+    const updated = await updateBeat(id, {
+      like_count: Math.max(0, (beat.like_count || 0) + likeDelta),
+      dislike_count: Math.max(0, (beat.dislike_count || 0) + dislikeDelta),
+    });
 
-    const cur = beats[beatIndex];
-    const newLikeCount = Math.max(0, (cur.likeCount || 0) + (likeDelta || 0));
-    const newDislikeCount = Math.max(0, (cur.dislikeCount || 0) + (dislikeDelta || 0));
-
-    const updated = updateBeat(id, { likeCount: newLikeCount, dislikeCount: newDislikeCount });
     if (updated) return NextResponse.json(updated);
     return NextResponse.json({ error: 'Failed to update beat' }, { status: 500 });
 

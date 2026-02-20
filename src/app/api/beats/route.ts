@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { addBeat, getBeats, Beat } from '@/lib/storage';
-import path from 'path';
-import fs from 'fs';
+import { getBeats, addBeat, uploadFile } from '@/lib/storage';
 
 export async function GET() {
-  const beats = getBeats();
+  const beats = await getBeats();
   return NextResponse.json(beats);
 }
 
@@ -12,61 +10,42 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const audioFile = formData.get('audio') as File;
-    const coverFile = formData.get('cover') as File;
+    const coverFile = formData.get('cover') as File | null;
     const title = formData.get('title') as string;
     const bpm = formData.get('bpm') as string;
     const key = formData.get('key') as string;
-
-    // New fields
+    const description = (formData.get('description') as string) || '';
     const forSale = formData.get('forSale') === 'true';
     const priceStr = formData.get('price') as string;
     const price = priceStr ? parseFloat(priceStr) : undefined;
 
-    // Sanitize filename: separate extension, sanitize base name
-    const sanitize = (originalName: string) => {
-      const ext = path.extname(originalName);
-      const name = path.basename(originalName, ext);
-      const sanitizedName = name.replace(/[^a-zA-Z0-9-]/g, '-');
-      return `${sanitizedName}${ext}`;
-    };
-
-    const audioBuffer = Buffer.from(await audioFile.arrayBuffer());
-    const audioFileName = `${Date.now()}-${sanitize(audioFile.name)}`;
-    const uploadDir = path.join(process.cwd(), 'public/uploads');
-
-    // Ensure directory exists (redundant check but safe)
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
+    if (!audioFile) {
+      return NextResponse.json({ error: 'Audio file required' }, { status: 400 });
     }
 
-    const audioPath = path.join(uploadDir, audioFileName);
-    fs.writeFileSync(audioPath, audioBuffer);
+    // Upload audio to Supabase Storage
+    const audioUrl = await uploadFile(audioFile, 'audio');
 
-    let coverPath = '';
-    if (coverFile) {
-      const coverBuffer = Buffer.from(await coverFile.arrayBuffer());
-      const coverFileName = `${Date.now()}-${sanitize(coverFile.name)}`;
-      const coverFilePath = path.join(uploadDir, coverFileName);
-      fs.writeFileSync(coverFilePath, coverBuffer);
-      coverPath = `/uploads/${coverFileName}`;
+    // Upload cover if provided
+    let coverUrl = '';
+    if (coverFile && coverFile.size > 0) {
+      coverUrl = await uploadFile(coverFile, 'covers');
     }
 
-    const newBeat: Beat = {
+    const newBeat = await addBeat({
       id: crypto.randomUUID(),
       title,
       bpm: parseInt(bpm) || 0,
       key: key || '',
-      coverPath,
-      audioPath: `/uploads/${audioFileName}`,
-      description: formData.get('description') as string || '',
-      createdAt: new Date().toISOString(),
-      forSale,
+      cover_path: coverUrl,
+      audio_path: audioUrl,
+      description,
+      like_count: 0,
+      dislike_count: 0,
+      for_sale: forSale,
       price: forSale ? price : undefined,
-      likeCount: 0,
-      dislikeCount: 0
-    };
+    });
 
-    addBeat(newBeat);
     return NextResponse.json(newBeat);
   } catch (error) {
     console.error('Upload error:', error);

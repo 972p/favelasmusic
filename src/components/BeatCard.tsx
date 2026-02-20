@@ -26,9 +26,9 @@ export function BeatCard({ beat, isPlaying, onToggle }: BeatCardProps) {
   return (
     <div className="group relative bg-white/5 border border-white/5 rounded-xl overflow-hidden hover:bg-white/10 hover:border-white/10 transition-all duration-300 backdrop-blur-sm">
       <div className="aspect-square relative flex items-center justify-center bg-zinc-900 overflow-hidden">
-        {beat.coverPath ? (
+        {beat.cover_path ? (
           <Image
-            src={beat.coverPath}
+            src={beat.cover_path}
             alt={beat.title}
             fill
             className={`object-cover transition-transform duration-500 ${isPlaying ? 'scale-105' : 'group-hover:scale-105'}`}
@@ -52,7 +52,7 @@ export function BeatCard({ beat, isPlaying, onToggle }: BeatCardProps) {
         {/* Download Button */}
         <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-y-[-10px] group-hover:translate-y-0">
           <a
-            href={beat.audioPath}
+            href={beat.audio_path}
             download
             onClick={(e) => e.stopPropagation()}
             className="p-2.5 bg-black/60 hover:bg-white hover:text-black text-white rounded-full transition-all flex items-center justify-center backdrop-blur-md"
@@ -69,7 +69,7 @@ export function BeatCard({ beat, isPlaying, onToggle }: BeatCardProps) {
           <div className="flex gap-2">
             <span className="px-2 py-0.5 rounded-full bg-white/5 border border-white/5">{beat.bpm} BPM</span>
             <span className="px-2 py-0.5 rounded-full bg-white/5 border border-white/5">{beat.key}</span>
-            {beat.forSale && beat.price !== undefined && (
+            {beat.for_sale && beat.price !== undefined && (
               <button
                 onClick={handleCheckout}
                 className="px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/20 flex items-center gap-1 hover:bg-green-500 hover:text-black transition-colors"
@@ -89,7 +89,7 @@ export function BeatCard({ beat, isPlaying, onToggle }: BeatCardProps) {
               title="Like"
             >
               <ThumbsUp className={`w-3.5 h-3.5 ${interaction === 'like' ? 'fill-current' : ''}`} />
-              <span>{Math.max(0, (beat.likeCount || 0) + optLike)}</span>
+              <span>{Math.max(0, (beat.like_count || 0) + optLike)}</span>
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); toggleDislike(beat.id); }}
@@ -97,7 +97,7 @@ export function BeatCard({ beat, isPlaying, onToggle }: BeatCardProps) {
               title="Dislike"
             >
               <ThumbsDown className={`w-3.5 h-3.5 ${interaction === 'dislike' ? 'fill-current' : ''}`} />
-              <span>{Math.max(0, (beat.dislikeCount || 0) + optDislike)}</span>
+              <span>{Math.max(0, (beat.dislike_count || 0) + optDislike)}</span>
             </button>
           </div>
         </div>

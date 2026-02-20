@@ -1,130 +1,67 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getProfile, updateProfile, Profile } from '@/lib/storage';
-import path from 'path';
-import fs from 'fs';
+import { getProfile, updateProfile, uploadFile, deleteFile } from '@/lib/storage';
 
 export async function GET() {
-  const profile = getProfile();
+  const profile = await getProfile();
   return NextResponse.json(profile);
 }
 
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
-    
+
     const pseudo = formData.get('pseudo') as string;
     const tagline = formData.get('tagline') as string;
     const instagram = formData.get('instagram') as string;
     const twitter = formData.get('twitter') as string;
     const youtube = formData.get('youtube') as string;
-    
-    // Handle Profile Picture
-    const file = formData.get('profilePicture') as File | null;
-    let profilePicturePath = undefined;
 
-    // Handle Banner
+    const profilePicFile = formData.get('profilePicture') as File | null;
     const bannerFile = formData.get('banner') as File | null;
-    let bannerPath = undefined;
+    const bgFile = formData.get('backgroundImage') as File | null;
 
-    // Handle Background
-    const backgroundImageFile = formData.get('backgroundImage') as File | null;
-    let backgroundImagePath = undefined;
-    
-    // Better blur parsing
     const backgroundBlurRaw = formData.get('backgroundBlur');
     const backgroundBlur = backgroundBlurRaw !== null ? parseInt(backgroundBlurRaw as string) : undefined;
 
-    if (file && file.size > 0) {
-      const buffer = Buffer.from(await file.arrayBuffer());
-      const fileName = `profile-${Date.now()}-${file.name.replace(/\s/g, '-')}`;
-      const uploadDir = path.join(process.cwd(), 'public/uploads');
-      
-      if (!fs.existsSync(uploadDir)) {
-          fs.mkdirSync(uploadDir, { recursive: true });
-      }
-
-      const filePath = path.join(uploadDir, fileName);
-      fs.writeFileSync(filePath, buffer);
-      profilePicturePath = `/uploads/${fileName}`;
-    }
-
-    if (bannerFile && bannerFile.size > 0) {
-      const buffer = Buffer.from(await bannerFile.arrayBuffer());
-      const fileName = `banner-${Date.now()}-${bannerFile.name.replace(/\s/g, '-')}`;
-      const uploadDir = path.join(process.cwd(), 'public/uploads');
-
-      if (!fs.existsSync(uploadDir)) {
-          fs.mkdirSync(uploadDir, { recursive: true });
-      }
-
-      const filePath = path.join(uploadDir, fileName);
-      fs.writeFileSync(filePath, buffer);
-      bannerPath = `/uploads/${fileName}`;
-    }
-
-    if (backgroundImageFile && backgroundImageFile.size > 0) {
-      const buffer = Buffer.from(await backgroundImageFile.arrayBuffer());
-      const fileName = `bg-${Date.now()}-${backgroundImageFile.name.replace(/\s/g, '-')}`;
-      const uploadDir = path.join(process.cwd(), 'public/uploads');
-
-      if (!fs.existsSync(uploadDir)) {
-          fs.mkdirSync(uploadDir, { recursive: true });
-      }
-
-      const filePath = path.join(uploadDir, fileName);
-      fs.writeFileSync(filePath, buffer);
-      backgroundImagePath = `/uploads/${fileName}`;
-    }
-
-    const currentProfile = getProfile();
-    const updatedData: Partial<Profile> = {
+    const currentProfile = await getProfile();
+    const updatedData: Record<string, unknown> = {
       pseudo,
       tagline,
-      socials: {
-        instagram,
-        twitter,
-        youtube
-      }
+      socials: { instagram, twitter, youtube },
     };
 
-    // Helper to delete old file
-    const deleteOldFile = (relativePath?: string) => {
-        if (!relativePath || !relativePath.startsWith('/uploads/')) return;
-        const fullPath = path.join(process.cwd(), 'public', relativePath);
-        if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
-    };
-
-    // Handle Deletions
+    // ── Profile picture ───────────────────────────────────────────────────
     if (formData.get('delete_profilePicture') === 'true') {
-        deleteOldFile(currentProfile.profilePicture);
-        updatedData.profilePicture = ''; 
-    } else if (profilePicturePath) {
-        // Only delete old if replacing
-        if (currentProfile.profilePicture) deleteOldFile(currentProfile.profilePicture);
-        updatedData.profilePicture = profilePicturePath;
+      if (currentProfile.profile_picture) await deleteFile(currentProfile.profile_picture);
+      updatedData.profile_picture = null;
+    } else if (profilePicFile && profilePicFile.size > 0) {
+      if (currentProfile.profile_picture) await deleteFile(currentProfile.profile_picture);
+      updatedData.profile_picture = await uploadFile(profilePicFile, 'profile');
     }
 
+    // ── Banner ────────────────────────────────────────────────────────────
     if (formData.get('delete_banner') === 'true') {
-        deleteOldFile(currentProfile.banner);
-        updatedData.banner = undefined;
-    } else if (bannerPath) {
-        if (currentProfile.banner) deleteOldFile(currentProfile.banner);
-        updatedData.banner = bannerPath;
+      if (currentProfile.banner) await deleteFile(currentProfile.banner);
+      updatedData.banner = null;
+    } else if (bannerFile && bannerFile.size > 0) {
+      if (currentProfile.banner) await deleteFile(currentProfile.banner);
+      updatedData.banner = await uploadFile(bannerFile, 'banners');
     }
 
+    // ── Background image ──────────────────────────────────────────────────
     if (formData.get('delete_backgroundImage') === 'true') {
-        deleteOldFile(currentProfile.backgroundImage);
-        updatedData.backgroundImage = undefined;
-    } else if (backgroundImagePath) {
-         if (currentProfile.backgroundImage) deleteOldFile(currentProfile.backgroundImage);
-        updatedData.backgroundImage = backgroundImagePath;
+      if (currentProfile.background_image) await deleteFile(currentProfile.background_image);
+      updatedData.background_image = null;
+    } else if (bgFile && bgFile.size > 0) {
+      if (currentProfile.background_image) await deleteFile(currentProfile.background_image);
+      updatedData.background_image = await uploadFile(bgFile, 'backgrounds');
     }
 
     if (backgroundBlur !== undefined) {
-      updatedData.backgroundBlur = backgroundBlur;
+      updatedData.background_blur = backgroundBlur;
     }
 
-    const newProfile = updateProfile(updatedData);
+    const newProfile = await updateProfile(updatedData as any);
     return NextResponse.json(newProfile);
   } catch (error) {
     console.error('Profile update error:', error);

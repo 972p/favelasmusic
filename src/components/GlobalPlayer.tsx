@@ -109,7 +109,7 @@ function PlayerContent() {
         setCurrentTime(0);
         setIsReady(false);
         wavesurfer.current.seekTo(0);
-        const audioUrl = `${encodeURI(currentBeat.audioPath)}?t=${Date.now()}`;
+        const audioUrl = `${encodeURI(currentBeat.audio_path)}?t=${Date.now()}`;
         const loadPromise = wavesurfer.current.load(audioUrl);
         if (loadPromise && typeof loadPromise.then === 'function') {
             loadPromise.catch((err) => {
@@ -166,8 +166,8 @@ function PlayerContent() {
 
                             <div className="relative flex items-center justify-center gap-8">
                                 <div className="w-20 h-20 rounded-xl overflow-hidden bg-white/5 flex-shrink-0 border border-white/10">
-                                    {currentBeat.coverPath ? (
-                                        <img src={currentBeat.coverPath} alt={currentBeat.title} className="w-full h-full object-cover" />
+                                    {currentBeat.cover_path ? (
+                                        <img src={currentBeat.cover_path} alt={currentBeat.title} className="w-full h-full object-cover" />
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center">
                                             <Music className="w-8 h-8 text-white/20" />
@@ -178,7 +178,7 @@ function PlayerContent() {
                                 <div className="flex flex-col items-start gap-1">
                                     <div className="flex items-center gap-3">
                                         <h2 className="text-lg font-semibold text-white tracking-wide">{currentBeat.title}</h2>
-                                        {currentBeat.forSale && currentBeat.price !== undefined && (
+                                        {currentBeat.for_sale && currentBeat.price !== undefined && (
                                             <button
                                                 onClick={handleCheckout}
                                                 className="px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/20 text-xs font-bold flex items-center gap-1.5 hover:bg-green-500 hover:text-black transition-colors"
@@ -237,8 +237,8 @@ function PlayerContent() {
                     <div className="flex items-center gap-3 sm:gap-4">
                         {/* Cover Art */}
                         <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden bg-white/5 flex-shrink-0">
-                            {currentBeat.coverPath ? (
-                                <img src={currentBeat.coverPath} alt={currentBeat.title} className="w-full h-full object-cover" />
+                            {currentBeat.cover_path ? (
+                                <img src={currentBeat.cover_path} alt={currentBeat.title} className="w-full h-full object-cover" />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center text-xs text-white/30">
                                     <Music className="w-4 h-4" />
@@ -271,7 +271,7 @@ function PlayerContent() {
                                                     {currentBeat.key}
                                                 </span>
                                             )}
-                                            {currentBeat.forSale && currentBeat.price !== undefined && (
+                                            {currentBeat.for_sale && currentBeat.price !== undefined && (
                                                 <button
                                                     onClick={handleCheckout}
                                                     className="px-2 py-0.5 rounded-md bg-green-500/10 text-green-400 border border-green-500/20 text-xs font-bold hover:bg-green-500 hover:text-black transition-colors"
@@ -297,7 +297,7 @@ function PlayerContent() {
                                             title="Like"
                                         >
                                             <ThumbsUp className={`w-3.5 h-3.5 ${interaction === 'like' ? 'fill-current' : ''}`} />
-                                            <span className="text-xs font-mono">{Math.max(0, (currentBeat.likeCount || 0) + optLike)}</span>
+                                            <span className="text-xs font-mono">{Math.max(0, (currentBeat.like_count || 0) + optLike)}</span>
                                         </button>
                                         <button
                                             onClick={(e) => { e.stopPropagation(); toggleDislike(currentBeat.id); }}
@@ -308,7 +308,7 @@ function PlayerContent() {
                                             title="Dislike"
                                         >
                                             <ThumbsDown className={`w-3.5 h-3.5 ${interaction === 'dislike' ? 'fill-current' : ''}`} />
-                                            <span className="text-xs font-mono">{Math.max(0, (currentBeat.dislikeCount || 0) + optDislike)}</span>
+                                            <span className="text-xs font-mono">{Math.max(0, (currentBeat.dislike_count || 0) + optDislike)}</span>
                                         </button>
                                     </div>
 

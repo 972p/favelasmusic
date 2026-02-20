@@ -54,21 +54,21 @@ interface Beat {
     description?: string;
     bpm: number;
     key: string;
-    coverPath: string;
-    audioPath: string;
-    forSale?: boolean;
+    cover_path: string;
+    audio_path: string;
+    for_sale?: boolean;
     price?: number;
-    likeCount?: number;
-    dislikeCount?: number;
+    like_count?: number;
+    dislike_count?: number;
 }
 
 interface Profile {
     pseudo: string;
     tagline: string;
-    profilePicture: string;
+    profile_picture?: string;
     banner?: string;
-    backgroundImage?: string;
-    backgroundBlur?: number;
+    background_image?: string;
+    background_blur?: number;
     socials: {
         instagram?: string;
         twitter?: string;
@@ -212,7 +212,7 @@ export default function AdminPage() {
         setEditBeatId(beat.id);
         setEditBeat({ ...beat });
         setEditCoverName(null);
-        setEditIsForSale(beat.forSale || false);
+        setEditIsForSale(beat.for_sale || false);
     }
 
     async function handleEditSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -359,7 +359,7 @@ export default function AdminPage() {
                             )}>
                                 <div className="flex items-center gap-4 min-w-0">
                                     <div className="w-8 h-8 bg-zinc-900 rounded overflow-hidden flex-shrink-0">
-                                        {beat.coverPath && <img src={beat.coverPath} alt="" className="w-full h-full object-cover" />}
+                                        {beat.cover_path && <img src={beat.cover_path} alt="" className="w-full h-full object-cover" />}
                                     </div>
                                     <div className="min-w-0">
                                         <span className="text-zinc-300 font-medium text-sm truncate block">{beat.title}</span>
@@ -467,10 +467,10 @@ export default function AdminPage() {
                                                 className="absolute inset-0 opacity-0 cursor-pointer"
                                                 onChange={(e) => setEditCoverName(e.target.files?.[0]?.name || null)}
                                             />
-                                            {editBeat.coverPath && !editCoverName && (
-                                                <img src={editBeat.coverPath} alt="" className="h-14 w-14 object-cover rounded" />
+                                            {editBeat.cover_path && !editCoverName && (
+                                                <img src={editBeat.cover_path} alt="" className="h-14 w-14 object-cover rounded" />
                                             )}
-                                            <span className="text-xs text-zinc-500">{editCoverName || (editBeat.coverPath ? 'Change cover' : 'Upload cover')}</span>
+                                            <span className="text-xs text-zinc-500">{editCoverName || (editBeat.cover_path ? 'Change cover' : 'Upload cover')}</span>
                                         </div>
                                     </div>
 
@@ -663,19 +663,19 @@ export default function AdminPage() {
                                     className="absolute inset-0 opacity-0 cursor-pointer z-20"
                                 />
                                 {/* Use current profile pic if available */}
-                                {profile.profilePicture && !profilePicName && !removeProfilePic && (
-                                    <img src={profile.profilePicture} alt="Current" className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-30 transition-opacity" />
+                                {profile.profile_picture && !profilePicName && !removeProfilePic && (
+                                    <img src={profile.profile_picture} alt="Current" className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-30 transition-opacity" />
                                 )}
                                 <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                                     <Plus className="w-6 h-6 text-white" />
                                 </div>
-                                {(!profile.profilePicture || removeProfilePic) && !profilePicName && (
+                                {(!profile.profile_picture || removeProfilePic) && !profilePicName && (
                                     <User className="w-10 h-10 text-zinc-700 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                                 )}
                                 {profilePicName && <div className="absolute inset-0 bg-green-500/20 z-0" />}
 
                                 {/* Remove Button for Profile Pic */}
-                                {(profile.profilePicture || profilePicName) && !removeProfilePic && (
+                                {(profile.profile_picture || profilePicName) && !removeProfilePic && (
                                     <button
                                         type="button"
                                         onClick={() => {
@@ -781,7 +781,7 @@ export default function AdminPage() {
                                         </div>
 
                                         {/* Remove Button for Background */}
-                                        {(profile.backgroundImage || bgName) && !removeBg && (
+                                        {(profile.background_image || bgName) && !removeBg && (
                                             <button
                                                 type="button"
                                                 onClick={(e) => {
@@ -809,10 +809,10 @@ export default function AdminPage() {
                                             name="backgroundBlur"
                                             type="range"
                                             min="0" max="20" step="1"
-                                            defaultValue={profile.backgroundBlur ?? 4}
+                                            defaultValue={profile.background_blur ?? 4}
                                             className="w-full accent-white"
                                         />
-                                        <span className="font-mono text-zinc-400 w-8 text-center">{profile.backgroundBlur ?? 4}</span>
+                                        <span className="font-mono text-zinc-400 w-8 text-center">{profile.background_blur ?? 4}</span>
                                     </div>
                                 </div>
                             </div>

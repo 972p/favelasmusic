@@ -16,12 +16,12 @@ export const metadata: Metadata = {
   description: "Private Music Workspace",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const profile = getProfile();
+  const profile = await getProfile();
 
   return (
     <html lang="en">
