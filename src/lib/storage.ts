@@ -153,43 +153,36 @@ export async function getProfile(): Promise<Profile> {
 }
 
 export async function updateProfile(updates: Partial<Profile>): Promise<Profile> {
-  const mapRow = (data: Record<string, unknown>): Profile => ({
-    pseudo: data.pseudo as string,
-    tagline: data.tagline as string,
-    profile_picture: (data.profile_picture as string) || undefined,
-    banner: (data.banner as string) || undefined,
-    background_image: (data.background_image as string) || undefined,
-    background_blur: data.background_blur as number | undefined,
-    socials: (data.socials as Profile['socials']) || {},
+  const mapRow = (row: Record<string, unknown>): Profile => ({
+    pseudo: (row.pseudo as string) ?? DEFAULT_PROFILE.pseudo,
+    tagline: (row.tagline as string) ?? DEFAULT_PROFILE.tagline,
+    profile_picture: (row.profile_picture as string) || undefined,
+    banner: (row.banner as string) || undefined,
+    background_image: (row.background_image as string) || undefined,
+    background_blur: row.background_blur as number | undefined,
+    socials: (row.socials as Profile['socials']) || {},
   });
 
-  // Try to UPDATE the existing row (id = 1) first
-  const { data: updatedData, error: updateError } = await supabase
-    .from('profile')
-    .update(updates)
-    .eq('id', 1)
-    .select()
-    .single();
-
-  if (!updateError && updatedData) {
-    return mapRow(updatedData);
-  }
-
-  // If no row exists yet (PGRST116 = no rows), INSERT it
-  if (updateError?.code === 'PGRST116' || !updatedData) {
-    const { data: insertedData, error: insertError } = await supabase
+  try {
+    // Upsert: insert if id=1 doesn't exist, update if it does
+    const { data, error } = await supabase
       .from('profile')
-      .insert({ id: 1, ...updates })
+      .upsert({ id: 1, ...updates }, { onConflict: 'id' })
       .select()
       .single();
 
-    if (insertError) {
-      console.error('updateProfile insert error:', insertError);
+    if (error) {
+      console.error('updateProfile upsert error:', error.code, error.message);
       return DEFAULT_PROFILE;
     }
-    return mapRow(insertedData);
+    if (!data) {
+      console.error('updateProfile: upsert returned no data');
+      return DEFAULT_PROFILE;
+    }
+    return mapRow(data);
+  } catch (err) {
+    console.error('updateProfile exception:', err);
+    return DEFAULT_PROFILE;
   }
-
-  console.error('updateProfile error:', updateError);
-  return DEFAULT_PROFILE;
 }
+
