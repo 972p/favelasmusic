@@ -5,6 +5,12 @@ export async function POST(req: NextRequest) {
     const { password } = await req.json();
     const adminPassword = process.env.ADMIN_PASSWORD;
 
+    console.log("LOGIN ATTEMPT:", { 
+      receivedPassLength: password?.length,
+      envPassExists: !!adminPassword, 
+      envPassLength: adminPassword?.length 
+    });
+
     if (password === adminPassword) {
       // Set a cookie
       const response = NextResponse.json({ success: true });
