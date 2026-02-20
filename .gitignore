@@ -44,3 +44,4 @@ next-env.d.ts
 # User Data & Uploads
 /data/
 /public/uploads/
+!.env.production

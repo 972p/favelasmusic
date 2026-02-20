@@ -1,7 +1,25 @@
-const path = require('path')
-process.env.NODE_ENV = 'production'
-// Hostinger uses passenger or direct PM2, so we need to set the working directory for standalone to find .next
-process.chdir(__dirname)
+const { createServer } = require('http')
+const { parse } = require('url')
+const next = require('next')
 
-// On charge le serveur Next.js depuis le build standalone
-const NextServer = require('./.next/standalone/server.js')
+const dev = process.env.NODE_ENV !== 'production'
+const hostname = 'localhost'
+const port = process.env.PORT || 3000
+
+const app = next({ dev, hostname, port })
+const handle = app.getRequestHandler()
+
+app.prepare().then(() => {
+  createServer(async (req, res) => {
+    try {
+      const parsedUrl = parse(req.url, true)
+      await handle(req, res, parsedUrl)
+    } catch (err) {
+      console.error('Error occurred handling', req.url, err)
+      res.statusCode = 500
+      res.end('internal server error')
+    }
+  }).listen(port, () => {
+    console.log(`> Ready on http://${hostname}:${port}`)
+  })
+})
