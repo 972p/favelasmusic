@@ -17,21 +17,26 @@ export async function POST(req: NextRequest) {
     const bpm = formData.get('bpm') as string;
     const key = formData.get('key') as string;
 
+    // New fields
+    const forSale = formData.get('forSale') === 'true';
+    const priceStr = formData.get('price') as string;
+    const price = priceStr ? parseFloat(priceStr) : undefined;
+
     // Sanitize filename: separate extension, sanitize base name
     const sanitize = (originalName: string) => {
-        const ext = path.extname(originalName);
-        const name = path.basename(originalName, ext);
-        const sanitizedName = name.replace(/[^a-zA-Z0-9-]/g, '-');
-        return `${sanitizedName}${ext}`;
+      const ext = path.extname(originalName);
+      const name = path.basename(originalName, ext);
+      const sanitizedName = name.replace(/[^a-zA-Z0-9-]/g, '-');
+      return `${sanitizedName}${ext}`;
     };
 
     const audioBuffer = Buffer.from(await audioFile.arrayBuffer());
     const audioFileName = `${Date.now()}-${sanitize(audioFile.name)}`;
     const uploadDir = path.join(process.cwd(), 'public/uploads');
-    
+
     // Ensure directory exists (redundant check but safe)
     if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
+      fs.mkdirSync(uploadDir, { recursive: true });
     }
 
     const audioPath = path.join(uploadDir, audioFileName);
@@ -54,7 +59,11 @@ export async function POST(req: NextRequest) {
       coverPath,
       audioPath: `/uploads/${audioFileName}`,
       description: formData.get('description') as string || '',
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      forSale,
+      price: forSale ? price : undefined,
+      likeCount: 0,
+      dislikeCount: 0
     };
 
     addBeat(newBeat);

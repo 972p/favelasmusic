@@ -14,6 +14,12 @@ export interface Beat {
   audioPath: string;
   description?: string;
   createdAt: string;
+
+  // New properties for interactions and sales
+  likeCount?: number;
+  dislikeCount?: number;
+  forSale?: boolean;
+  price?: number;
 }
 
 export interface Socials {
@@ -39,17 +45,41 @@ export function getBeats(): Beat[] {
     return [];
   }
   try {
-      return JSON.parse(fs.readFileSync(BEATS_FILE, 'utf-8'));
+    return JSON.parse(fs.readFileSync(BEATS_FILE, 'utf-8'));
   } catch (e) {
-      return [];
+    return [];
   }
 }
 
 export function addBeat(beat: Beat) {
   const beats = getBeats();
-  beats.push(beat);
+
+  // Initialize counts
+  const newBeat = {
+    ...beat,
+    likeCount: beat.likeCount || 0,
+    dislikeCount: beat.dislikeCount || 0
+  };
+
+  beats.push(newBeat);
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
   fs.writeFileSync(BEATS_FILE, JSON.stringify(beats, null, 2));
+}
+
+export function updateBeat(id: string, updates: Partial<Beat>): Beat | null {
+  const beats = getBeats();
+  const beatIndex = beats.findIndex(b => b.id === id);
+
+  if (beatIndex === -1) return null;
+
+  // Apply updates
+  const updatedBeat = { ...beats[beatIndex], ...updates };
+  beats[beatIndex] = updatedBeat;
+
+  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+  fs.writeFileSync(BEATS_FILE, JSON.stringify(beats, null, 2));
+
+  return updatedBeat;
 }
 
 // Profile Management
@@ -82,27 +112,27 @@ export function updateProfile(newProfile: Partial<Profile>) {
 export function deleteBeat(id: string) {
   const beats = getBeats();
   const beatIndex = beats.findIndex(b => b.id === id);
-  
+
   if (beatIndex === -1) return false;
-  
+
   const beat = beats[beatIndex];
-  
+
   // Delete files
   try {
-      // Helper to delete file if it exists and is within public/uploads
-      const deleteFile = (relativePath: string) => {
-          if (!relativePath.startsWith('/uploads/')) return; // Safety check
-          const fullPath = path.join(process.cwd(), 'public', relativePath);
-          if (fs.existsSync(fullPath)) {
-              fs.unlinkSync(fullPath);
-          }
-      };
+    // Helper to delete file if it exists and is within public/uploads
+    const deleteFile = (relativePath: string) => {
+      if (!relativePath.startsWith('/uploads/')) return; // Safety check
+      const fullPath = path.join(process.cwd(), 'public', relativePath);
+      if (fs.existsSync(fullPath)) {
+        fs.unlinkSync(fullPath);
+      }
+    };
 
-      if (beat.audioPath) deleteFile(beat.audioPath);
-      if (beat.coverPath) deleteFile(beat.coverPath);
+    if (beat.audioPath) deleteFile(beat.audioPath);
+    if (beat.coverPath) deleteFile(beat.coverPath);
 
   } catch (error) {
-      console.error('Error deleting files for beat:', beat.id, error);
+    console.error('Error deleting files for beat:', beat.id, error);
   }
 
   beats.splice(beatIndex, 1);

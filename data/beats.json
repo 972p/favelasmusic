@@ -7,7 +7,9 @@
     "coverPath": "/uploads/1771536177050-07c468111c15c499f8ddf4e15260b929.jpg",
     "audioPath": "/uploads/1771536177047-Cherry-Pie---EXODIA.mp3",
     "description": "",
-    "createdAt": "2026-02-19T21:22:57.052Z"
+    "createdAt": "2026-02-19T21:22:57.052Z",
+    "likeCount": 1,
+    "dislikeCount": 0
   },
   {
     "id": "417ad52e-061e-4f09-ad08-8b7addeb11d2",
@@ -17,6 +19,22 @@
     "coverPath": "/uploads/1771536593577-79d972971fcbda01e25a17c0eee4eca9.gif",
     "audioPath": "/uploads/1771536593575-CONSTANCE-V2.mp3",
     "description": "",
-    "createdAt": "2026-02-19T21:29:53.578Z"
+    "createdAt": "2026-02-19T21:29:53.578Z",
+    "likeCount": 0,
+    "dislikeCount": 0
+  },
+  {
+    "id": "e602daa1-4a39-469a-9550-3f2143a28831",
+    "title": "Bad bunny",
+    "bpm": 118,
+    "key": "A Minor",
+    "coverPath": "/uploads/1771582221919-0a7a868aba4428568b9d16b862fb3084.gif",
+    "audioPath": "/uploads/1771582221907-BAD-BUNNY---NUEVAYoL--Video-Oficial---DeBI--TiRAR-Ma-S-FOToS.mp3",
+    "description": "",
+    "createdAt": "2026-02-20T10:10:21.926Z",
+    "forSale": true,
+    "price": 10,
+    "likeCount": 0,
+    "dislikeCount": 0
   }
 ]
