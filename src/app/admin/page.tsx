@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Upload, User, Music, LogOut, Trash2, Plus, X, Check, Disc, FileAudio, Tag } from 'lucide-react';
+import { Upload, User, Music, LogOut, Trash2, Plus, X, Check, Disc, FileAudio, Tag, Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { formatTime, cn } from '@/lib/utils';
 import { useToastStore } from '@/store/useToastStore';
@@ -51,9 +51,15 @@ const normalizeKey = (key: string) => {
 interface Beat {
     id: string;
     title: string;
+    description?: string;
     bpm: number;
     key: string;
     coverPath: string;
+    audioPath: string;
+    forSale?: boolean;
+    price?: number;
+    likeCount?: number;
+    dislikeCount?: number;
 }
 
 interface Profile {
@@ -77,6 +83,11 @@ export default function AdminPage() {
     const router = useRouter();
     const { addToast } = useToastStore();
     const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [editBeatId, setEditBeatId] = useState<string | null>(null);
+    const [editBeat, setEditBeat] = useState<Beat | null>(null);
+    const [editCoverName, setEditCoverName] = useState<string | null>(null);
+    const [editIsForSale, setEditIsForSale] = useState(false);
+    const editCoverRef = useRef<HTMLInputElement>(null);
 
     const [loading, setLoading] = useState(false);
     const [analyzing, setAnalyzing] = useState(false);
@@ -197,6 +208,37 @@ export default function AdminPage() {
         }
     }
 
+    function openEdit(beat: Beat) {
+        setEditBeatId(beat.id);
+        setEditBeat({ ...beat });
+        setEditCoverName(null);
+        setEditIsForSale(beat.forSale || false);
+    }
+
+    async function handleEditSubmit(e: React.FormEvent<HTMLFormElement>) {
+        e.preventDefault();
+        if (!editBeatId) return;
+        setLoading(true);
+        const formData = new FormData(e.currentTarget);
+        formData.append('forSale', editIsForSale.toString());
+        try {
+            const res = await fetch(`/api/beats/${editBeatId}`, { method: 'PATCH', body: formData });
+            if (res.ok) {
+                fetchBeats();
+                setEditBeatId(null);
+                setEditBeat(null);
+                addToast('Track updated', 'success');
+            } else {
+                addToast('Update failed', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            addToast('Error updating track', 'error');
+        } finally {
+            setLoading(false);
+        }
+    }
+
     async function confirmDelete() {
         if (!deleteId) return;
         try {
@@ -311,21 +353,38 @@ export default function AdminPage() {
                         </div>
 
                         {beats.map((beat) => (
-                            <div key={beat.id} className="group flex items-center justify-between p-3 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/5 transition-all">
-                                <div className="flex items-center gap-4">
+                            <div key={beat.id} className={cn(
+                                "group flex items-center justify-between p-3 rounded-lg border transition-all",
+                                editBeatId === beat.id ? "bg-white/5 border-white/10" : "border-transparent hover:bg-white/5 hover:border-white/5"
+                            )}>
+                                <div className="flex items-center gap-4 min-w-0">
                                     <div className="w-8 h-8 bg-zinc-900 rounded overflow-hidden flex-shrink-0">
                                         {beat.coverPath && <img src={beat.coverPath} alt="" className="w-full h-full object-cover" />}
                                     </div>
-                                    <span className="text-zinc-300 font-medium text-sm">{beat.title}</span>
+                                    <div className="min-w-0">
+                                        <span className="text-zinc-300 font-medium text-sm truncate block">{beat.title}</span>
+                                        {beat.description && <span className="text-zinc-600 text-xs truncate block max-w-[200px]">{beat.description}</span>}
+                                    </div>
                                 </div>
 
-                                <div className="flex items-center gap-12 text-xs font-mono text-zinc-500">
-                                    <span className="w-16">{beat.bpm}</span>
-                                    <span className="w-16">{beat.key}</span>
-                                    <div className="w-8 flex justify-end">
+                                <div className="flex items-center gap-4 sm:gap-8 text-xs font-mono text-zinc-500">
+                                    <span className="hidden sm:block w-16">{beat.bpm}</span>
+                                    <span className="hidden sm:block w-16">{beat.key}</span>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => editBeatId === beat.id ? (setEditBeatId(null), setEditBeat(null)) : openEdit(beat)}
+                                            className={cn(
+                                                "transition-colors",
+                                                editBeatId === beat.id ? "text-white" : "text-zinc-600 hover:text-white opacity-0 group-hover:opacity-100"
+                                            )}
+                                            title="Edit"
+                                        >
+                                            <Pencil className="w-4 h-4" />
+                                        </button>
                                         <button
                                             onClick={() => setDeleteId(beat.id)}
                                             className="text-zinc-600 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                            title="Delete"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
@@ -338,6 +397,127 @@ export default function AdminPage() {
                             <div className="text-center py-20 text-zinc-700">
                                 <Music className="w-8 h-8 mx-auto mb-4 opacity-20" />
                                 <p className="text-xs uppercase tracking-widest">No tracks found</p>
+                            </div>
+                        )}
+
+                        {/* Inline Edit Panel */}
+                        {editBeatId && editBeat && (
+                            <div className="mt-4 border border-white/10 rounded-xl p-5 bg-white/[0.03] animate-in fade-in slide-in-from-top-2">
+                                <div className="flex items-center justify-between mb-5">
+                                    <h3 className="text-xs uppercase tracking-[0.2em] text-zinc-400">Edit Track</h3>
+                                    <button onClick={() => { setEditBeatId(null); setEditBeat(null); }} className="text-zinc-600 hover:text-white transition-colors">
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                <form onSubmit={handleEditSubmit} className="space-y-5">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">Title</label>
+                                            <input
+                                                name="title"
+                                                defaultValue={editBeat.title}
+                                                required
+                                                className="bg-transparent border-b border-white/10 py-1.5 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-white/40 transition-colors"
+                                            />
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">Description</label>
+                                            <input
+                                                name="description"
+                                                defaultValue={editBeat.description || ''}
+                                                placeholder="Optional"
+                                                className="bg-transparent border-b border-white/10 py-1.5 text-sm text-zinc-300 placeholder-zinc-700 focus:outline-none focus:border-white/40 transition-colors"
+                                            />
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">BPM</label>
+                                            <input
+                                                name="bpm"
+                                                type="number"
+                                                defaultValue={editBeat.bpm}
+                                                className="bg-transparent border-b border-white/10 py-1.5 text-sm font-mono text-zinc-300 focus:outline-none focus:border-white/40 transition-colors"
+                                            />
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">Musical Key</label>
+                                            <select
+                                                name="key"
+                                                defaultValue={editBeat.key}
+                                                className="bg-zinc-950 border-b border-white/10 py-1.5 text-sm font-mono text-zinc-300 focus:outline-none focus:border-white/40 transition-colors [&>option]:bg-zinc-900"
+                                            >
+                                                {MUSICAL_KEYS.map((k) => (
+                                                    <option key={k} value={k}>{k}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    {/* Cover Change */}
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">Cover Art (optional — leave blank to keep current)</label>
+                                        <div className={cn(
+                                            "relative h-20 rounded-lg border border-dashed flex items-center justify-center gap-3 cursor-pointer transition-all",
+                                            editCoverName ? "border-green-500/30 bg-green-500/5" : "border-white/10 hover:border-white/20"
+                                        )}>
+                                            <input
+                                                ref={editCoverRef}
+                                                name="cover"
+                                                type="file"
+                                                accept="image/*"
+                                                className="absolute inset-0 opacity-0 cursor-pointer"
+                                                onChange={(e) => setEditCoverName(e.target.files?.[0]?.name || null)}
+                                            />
+                                            {editBeat.coverPath && !editCoverName && (
+                                                <img src={editBeat.coverPath} alt="" className="h-14 w-14 object-cover rounded" />
+                                            )}
+                                            <span className="text-xs text-zinc-500">{editCoverName || (editBeat.coverPath ? 'Change cover' : 'Upload cover')}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Pricing */}
+                                    <div className="flex flex-col gap-3 pt-2 border-t border-white/5">
+                                        <label className="flex items-center gap-3 cursor-pointer group">
+                                            <div className={cn(
+                                                "w-4 h-4 rounded border flex items-center justify-center transition-all",
+                                                editIsForSale ? "bg-green-500 border-green-500 text-black" : "border-white/20 group-hover:border-white/50"
+                                            )}>
+                                                {editIsForSale && <Check className="w-2.5 h-2.5" />}
+                                            </div>
+                                            <input type="checkbox" className="hidden" checked={editIsForSale} onChange={(e) => setEditIsForSale(e.target.checked)} />
+                                            <span className="text-zinc-400 text-sm group-hover:text-white transition-colors">For sale</span>
+                                        </label>
+                                        {editIsForSale && (
+                                            <div className="flex flex-col gap-1 animate-in fade-in">
+                                                <label className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">Price (€)</label>
+                                                <input
+                                                    name="price"
+                                                    type="number"
+                                                    step="0.01"
+                                                    min="0.01"
+                                                    defaultValue={editBeat.price}
+                                                    className="bg-transparent border-b border-white/10 py-1.5 w-28 text-sm font-mono text-zinc-300 focus:outline-none focus:border-white/40 transition-colors"
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="flex items-center gap-3 pt-1">
+                                        <button
+                                            type="submit"
+                                            disabled={loading}
+                                            className="px-5 py-2 bg-white text-black text-xs font-bold uppercase tracking-wider rounded hover:bg-zinc-200 transition-colors disabled:opacity-50"
+                                        >
+                                            {loading ? 'Saving...' : 'Save Changes'}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => { setEditBeatId(null); setEditBeat(null); }}
+                                            className="px-5 py-2 text-zinc-500 hover:text-white text-xs uppercase tracking-wider transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
                         )}
                     </div>

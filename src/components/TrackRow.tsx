@@ -2,7 +2,7 @@
 
 import { Beat } from "@/lib/storage";
 import { useAudioStore } from "@/store/useAudioStore";
-import { Play, Pause, Music, ThumbsUp, ThumbsDown, ShoppingCart } from "lucide-react";
+import { Play, Pause, ThumbsUp, ThumbsDown, ShoppingCart } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useInteractionStore } from "@/store/useInteractionStore";
@@ -43,19 +43,17 @@ export function TrackRow({ beat, index }: TrackRowProps) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
+            onClick={handlePlay}
             className={cn(
-                "group relative flex items-center gap-4 p-3 rounded-xl transition-all duration-300",
+                "group relative flex items-center gap-3 sm:gap-4 p-3 rounded-xl transition-all duration-300 cursor-pointer",
                 "hover:bg-white/5 border border-transparent hover:border-white/5",
                 isCurrent ? "bg-white/5 border-white/10" : ""
             )}
         >
-            {/* Play Button Overlay / Index */}
-            <div className="w-8 h-8 flex items-center justify-center shrink-0">
+            {/* Play Button / Index */}
+            <div className="w-8 h-8 flex items-center justify-center shrink-0 relative">
                 <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        handlePlay();
-                    }}
+                    onClick={(e) => { e.stopPropagation(); handlePlay(); }}
                     className={cn(
                         "w-8 h-8 rounded-full flex items-center justify-center transition-all bg-white text-black opacity-0 scale-90 relative z-10 pointer-events-auto",
                         "group-hover:opacity-100 group-hover:scale-100",
@@ -65,7 +63,6 @@ export function TrackRow({ beat, index }: TrackRowProps) {
                     {isCurrentPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current ml-0.5" />}
                 </button>
 
-                {/* Fallback to index or music note if not hovered/playing */}
                 <span className={cn(
                     "absolute text-sm text-zinc-500 font-mono transition-opacity pointer-events-none",
                     "group-hover:opacity-0",
@@ -75,9 +72,9 @@ export function TrackRow({ beat, index }: TrackRowProps) {
                 </span>
             </div>
 
-            {/* Title & Info */}
+            {/* Title, Description & Mobile Badges */}
             <div className="flex-1 min-w-0 flex flex-col justify-center">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                     <h4 className={cn(
                         "font-medium truncate transition-colors",
                         isCurrent ? "text-white" : "text-zinc-300 group-hover:text-white"
@@ -93,15 +90,30 @@ export function TrackRow({ beat, index }: TrackRowProps) {
                         </button>
                     )}
                 </div>
+
                 {beat.description && (
                     <p className="text-xs text-zinc-500 truncate group-hover:text-zinc-400 max-w-[300px]">
                         {beat.description}
                     </p>
                 )}
+
+                {/* Mobile BPM/Key badges */}
+                <div className="flex sm:hidden items-center gap-1.5 mt-1 flex-wrap">
+                    {beat.bpm > 0 && (
+                        <span className="px-1.5 py-0.5 rounded bg-white/5 text-[10px] font-mono text-zinc-500">
+                            {beat.bpm} BPM
+                        </span>
+                    )}
+                    {beat.key && (
+                        <span className="px-1.5 py-0.5 rounded bg-white/5 text-[10px] font-mono text-zinc-500">
+                            {beat.key}
+                        </span>
+                    )}
+                </div>
             </div>
 
-            {/* Metadata (BPM, Key) - Hidden on small screens, visible on hover/large */}
-            <div className="hidden md:flex items-center gap-6 text-xs text-zinc-500 font-mono">
+            {/* Desktop: Metadata + Interactions */}
+            <div className="hidden sm:flex items-center gap-4 md:gap-6 text-xs text-zinc-500 font-mono">
                 {beat.forSale && beat.price !== undefined && (
                     <button
                         className="opacity-0 group-hover:opacity-100 flex items-center gap-1.5 px-2.5 py-1.5 bg-white/10 hover:bg-white text-white hover:text-black rounded transition-all duration-300 font-sans text-xs font-bold uppercase tracking-wider"
@@ -142,12 +154,12 @@ export function TrackRow({ beat, index }: TrackRowProps) {
                 </div>
 
                 {beat.bpm && (
-                    <span className="group-hover:text-zinc-300 transition-colors w-16 text-right">
+                    <span className="group-hover:text-zinc-300 transition-colors w-16 text-right hidden md:block">
                         {beat.bpm} BPM
                     </span>
                 )}
                 {beat.key && (
-                    <span className="w-16 text-center py-1 rounded bg-white/5 group-hover:bg-white/10 transition-colors inline-block">
+                    <span className="w-16 text-center py-1 rounded bg-white/5 group-hover:bg-white/10 transition-colors hidden md:inline-block">
                         {beat.key}
                     </span>
                 )}
