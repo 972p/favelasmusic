@@ -5,10 +5,10 @@ export async function POST(req: NextRequest) {
     const { password } = await req.json();
     const adminPassword = process.env.ADMIN_PASSWORD;
 
-    console.log("LOGIN ATTEMPT:", { 
+    console.log("LOGIN ATTEMPT:", {
       receivedPassLength: password?.length,
-      envPassExists: !!adminPassword, 
-      envPassLength: adminPassword?.length 
+      envPassExists: !!adminPassword,
+      envPassLength: adminPassword?.length
     });
 
     if (password === adminPassword) {
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
       response.cookies.set('admin_session', 'true', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: 'lax',
         maxAge: 60 * 60 * 24 * 7, // 1 week
         path: '/',
       });

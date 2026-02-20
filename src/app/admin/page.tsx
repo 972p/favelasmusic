@@ -142,8 +142,16 @@ export default function AdminPage() {
         const file = e.target.files?.[0];
         if (file) {
             setAudioName(file.name);
+
+            // Skip analysis on mobile to avoid WebAssembly crashes
+            const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+            if (isMobile) {
+                addToast("Fichier sélectionné — remplissez le BPM et la tonalité manuellement", "info");
+                return;
+            }
+
             setAnalyzing(true);
-            addToast("Analyzing audio for BPM and Key...", "info");
+            addToast("Détection du BPM et de la tonalité...", "info");
 
             try {
                 const result = await analyzeAudio(file);
@@ -159,7 +167,6 @@ export default function AdminPage() {
 
                     if (keySelect) {
                         let detectedKey = normalizeKey(result.key);
-                        // Check if valid
                         if (MUSICAL_KEYS.includes(detectedKey)) {
                             keySelect.value = detectedKey;
                         } else {
@@ -167,13 +174,13 @@ export default function AdminPage() {
                         }
                     }
 
-                    addToast(`Detected: ${result.bpm} BPM, ${normalizeKey(result.key)}`, "success");
+                    addToast(`Détecté : ${result.bpm} BPM, ${normalizeKey(result.key)}`, "success");
                 } else {
-                    addToast("Could not detect BPM/Key, please enter manually", "error");
+                    addToast("Détection impossible — remplissez manuellement", "info");
                 }
             } catch (err) {
                 console.error(err);
-                addToast("Analysis failed", "error");
+                addToast("Analyse échouée — remplissez le BPM et la tonalité manuellement", "info");
             } finally {
                 setAnalyzing(false);
             }
@@ -370,12 +377,14 @@ export default function AdminPage() {
                                 <div className="flex items-center gap-4 sm:gap-8 text-xs font-mono text-zinc-500">
                                     <span className="hidden sm:block w-16">{beat.bpm}</span>
                                     <span className="hidden sm:block w-16">{beat.key}</span>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-3">
                                         <button
                                             onClick={() => editBeatId === beat.id ? (setEditBeatId(null), setEditBeat(null)) : openEdit(beat)}
                                             className={cn(
-                                                "transition-colors",
-                                                editBeatId === beat.id ? "text-white" : "text-zinc-600 hover:text-white opacity-0 group-hover:opacity-100"
+                                                "p-2 rounded-lg transition-colors",
+                                                editBeatId === beat.id
+                                                    ? "text-white bg-white/10"
+                                                    : "text-zinc-500 hover:text-white hover:bg-white/5"
                                             )}
                                             title="Edit"
                                         >
@@ -383,7 +392,7 @@ export default function AdminPage() {
                                         </button>
                                         <button
                                             onClick={() => setDeleteId(beat.id)}
-                                            className="text-zinc-600 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                            className="p-2 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                                             title="Delete"
                                         >
                                             <Trash2 className="w-4 h-4" />

@@ -153,20 +153,43 @@ export async function getProfile(): Promise<Profile> {
 }
 
 export async function updateProfile(updates: Partial<Profile>): Promise<Profile> {
-  // Upsert the single profile row (id = 1)
-  const { data, error } = await supabase
+  const mapRow = (data: Record<string, unknown>): Profile => ({
+    pseudo: data.pseudo as string,
+    tagline: data.tagline as string,
+    profile_picture: (data.profile_picture as string) || undefined,
+    banner: (data.banner as string) || undefined,
+    background_image: (data.background_image as string) || undefined,
+    background_blur: data.background_blur as number | undefined,
+    socials: (data.socials as Profile['socials']) || {},
+  });
+
+  // Try to UPDATE the existing row (id = 1) first
+  const { data: updatedData, error: updateError } = await supabase
     .from('profile')
-    .upsert({ id: 1, ...updates })
+    .update(updates)
+    .eq('id', 1)
     .select()
     .single();
-  if (error) { console.error('updateProfile error:', error); return DEFAULT_PROFILE; }
-  return {
-    pseudo: data.pseudo,
-    tagline: data.tagline,
-    profile_picture: data.profile_picture || undefined,
-    banner: data.banner || undefined,
-    background_image: data.background_image || undefined,
-    background_blur: data.background_blur,
-    socials: data.socials || {},
-  };
+
+  if (!updateError && updatedData) {
+    return mapRow(updatedData);
+  }
+
+  // If no row exists yet (PGRST116 = no rows), INSERT it
+  if (updateError?.code === 'PGRST116' || !updatedData) {
+    const { data: insertedData, error: insertError } = await supabase
+      .from('profile')
+      .insert({ id: 1, ...updates })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error('updateProfile insert error:', insertError);
+      return DEFAULT_PROFILE;
+    }
+    return mapRow(insertedData);
+  }
+
+  console.error('updateProfile error:', updateError);
+  return DEFAULT_PROFILE;
 }
