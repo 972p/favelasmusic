@@ -21,7 +21,13 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const profile = await getProfile();
+  let profile;
+  try {
+    profile = await getProfile();
+  } catch (e) {
+    console.error('Layout getProfile failed:', e);
+    profile = { pseudo: 'Favelas', tagline: '', socials: {} };
+  }
 
   return (
     <html lang="en">
