@@ -23,6 +23,23 @@ const nextConfig: NextConfig = {
     }
     return config;
   },
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          },
+          {
+             key: 'X-LiteSpeed-Cache-Control',
+             value: 'no-cache'
+          }
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

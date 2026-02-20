@@ -11,7 +11,13 @@ export function proxy(request: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  // Add aggressive cache control headers to prevent LiteSpeed from caching RSC payloads
+  const res = NextResponse.next();
+  res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.headers.set('Pragma', 'no-cache');
+  res.headers.set('Expires', '0');
+
+  return res;
 }
 
 export const config = {
