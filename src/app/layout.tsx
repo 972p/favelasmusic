@@ -9,6 +9,8 @@ import { ToastContainer } from "@/components/ui/ToastContainer";
 
 const inter = Inter({ subsets: ["latin"] });
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: "FavelasMusic",
   description: "Private Music Workspace",
