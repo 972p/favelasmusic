@@ -1,4 +1,4 @@
-import { getBeats, getProfile, Beat, Profile } from '@/lib/storage';
+import { getBeats, getProfile } from '@/lib/storage';
 import { TrackRow } from '@/components/TrackRow';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -8,19 +8,8 @@ import { Lock, Instagram, Twitter, Youtube, MoreHorizontal } from 'lucide-react'
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
-    let beats: Beat[], profile: Profile;
-    try {
-        beats = await getBeats();
-    } catch (e) {
-        console.error('Home getBeats failed:', e);
-        beats = [];
-    }
-    try {
-        profile = await getProfile();
-    } catch (e) {
-        console.error('Home getProfile failed:', e);
-        profile = { pseudo: 'Favelas', tagline: '', socials: {}, banner: undefined, profile_picture: undefined, background_image: undefined };
-    }
+    const beats = await getBeats();
+    const profile = await getProfile();
 
     return (
         <main className="min-h-screen pb-32"> {/* Padding bottom for player */}
