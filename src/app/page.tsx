@@ -72,6 +72,15 @@ export default async function Home() {
                             <p className="text-zinc-500 text-sm">
                                 {profile.tagline || "Workspace"}
                             </p>
+                            <p className="text-xs text-zinc-600 mt-1">
+                                Pour toute demande spéciale :{' '}
+                                <a
+                                    href="mailto:contact@favelas.eu"
+                                    className="text-zinc-400 hover:text-white underline underline-offset-2 transition-colors"
+                                >
+                                    contact@favelas.eu
+                                </a>
+                            </p>
                         </div>
                     </div>
 

@@ -186,3 +186,36 @@ export async function updateProfile(updates: Partial<Profile>): Promise<Profile>
   }
 }
 
+// ─── Comments ─────────────────────────────────────────────────────────────────
+
+export interface Comment {
+  id: string;
+  beat_id: string;
+  author: string;
+  content: string;
+  created_at: string;
+}
+
+export async function getComments(beatId: string): Promise<Comment[]> {
+  const { data, error } = await supabase
+    .from('comments')
+    .select('*')
+    .eq('beat_id', beatId)
+    .order('created_at', { ascending: true });
+  if (error) { console.error('getComments error:', error); return []; }
+  return data as Comment[];
+}
+
+export async function addComment(
+  beatId: string,
+  author: string,
+  content: string
+): Promise<Comment | null> {
+  const { data, error } = await supabase
+    .from('comments')
+    .insert({ beat_id: beatId, author, content })
+    .select()
+    .single();
+  if (error) { console.error('addComment error:', error); return null; }
+  return data as Comment;
+}
