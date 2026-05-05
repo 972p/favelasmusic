@@ -19,7 +19,7 @@ export default async function Home() {
         profile = await getProfile();
     } catch (e) {
         console.error('Home getProfile failed:', e);
-        profile = { pseudo: 'Favelas', tagline: '', socials: { twitter: 'https://twitter.com/nombrebinaire' }, banner: undefined, profile_picture: undefined, background_image: undefined };
+        profile = { pseudo: 'Favelas', tagline: '', socials: {}, banner: undefined, profile_picture: undefined, background_image: undefined };
     }
 
     return (

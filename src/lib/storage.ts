@@ -131,9 +131,7 @@ export async function deleteBeat(id: string): Promise<boolean> {
 const DEFAULT_PROFILE: Profile = {
   pseudo: 'Beatmaker',
   tagline: 'Producer',
-  socials: {
-    twitter: 'https://twitter.com/nombrebinaire',
-  },
+  socials: {},
 };
 
 export async function getProfile(): Promise<Profile> {

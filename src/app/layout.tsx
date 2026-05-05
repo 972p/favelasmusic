@@ -26,7 +26,7 @@ export default async function RootLayout({
     profile = await getProfile();
   } catch (e) {
     console.error('Layout getProfile failed:', e);
-    profile = { pseudo: 'Favelas', tagline: '', socials: { twitter: 'https://twitter.com/nombrebinaire' } };
+    profile = { pseudo: 'Favelas', tagline: '', socials: {} };
   }
 
   return (
