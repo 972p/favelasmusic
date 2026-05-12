@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useAudioStore } from "@/store/useAudioStore";
-import { useToastStore } from "@/store/useToastStore";
+import { useAudioStore, globalAudio } from "@/store/useAudioStore";
 import { useInteractionStore } from "@/store/useInteractionStore";
 import { Play, Pause, Volume2, VolumeX, X, Music, ChevronUp, ChevronDown, ThumbsUp, ThumbsDown, ShoppingCart } from "lucide-react";
 import WaveSurfer from "wavesurfer.js";
@@ -20,8 +19,7 @@ export function GlobalPlayer() {
 }
 
 function PlayerContent() {
-    const { currentBeat, isPlaying, play, pause, togglePlay, volume, setVolume, setBeat } = useAudioStore();
-    const { addToast } = useToastStore();
+    const { currentBeat, isPlaying, pause, togglePlay, volume, setVolume, setBeat } = useAudioStore();
     const { interactions, sessionLikes, sessionDislikes, toggleLike, toggleDislike } = useInteractionStore();
     const containerRef = useRef<HTMLDivElement>(null);
     const wavesurfer = useRef<WaveSurfer | null>(null);
@@ -45,8 +43,12 @@ function PlayerContent() {
             barRadius: 3,
             height: 48,
             normalize: true,
-            backend: "WebAudio",
+            media: globalAudio || undefined,
             interact: true,
+        });
+
+        wavesurfer.current.on("timeupdate", (time) => {
+            setCurrentTime(time || wavesurfer.current?.getCurrentTime() || 0);
         });
 
         wavesurfer.current.on("audioprocess", () => {
@@ -58,10 +60,11 @@ function PlayerContent() {
         });
 
         wavesurfer.current.on("ready", () => {
-            const dur = wavesurfer.current?.getDuration() || 0;
+            const dur = wavesurfer.current?.getDuration() || globalAudio?.duration || 0;
             setDuration(dur);
             setIsReady(true);
-            if (useAudioStore.getState().isPlaying) {
+            // On mobile, native audio is unlocked directly via gesture. Ensure wavesurfer stays in sync
+            if (useAudioStore.getState().isPlaying && globalAudio?.paused) {
                 wavesurfer.current?.play().catch(err => console.error("Autoplay error:", err));
             }
         });
@@ -72,7 +75,6 @@ function PlayerContent() {
 
         wavesurfer.current.on("error", (err) => {
             console.error("WaveSurfer error:", err);
-            addToast("Error playing track", "error");
         });
 
         return () => {
@@ -87,37 +89,56 @@ function PlayerContent() {
 
     // Handle Play/Pause
     useEffect(() => {
-        if (!wavesurfer.current) return;
-        const ready = wavesurfer.current.getDuration() > 0;
-        if (!ready && isPlaying) return;
+        if (!globalAudio) return;
         if (isPlaying) {
-            wavesurfer.current.play().catch(err => console.error("Play error:", err));
+            if (globalAudio.paused) {
+                globalAudio.play().catch(err => console.error("Play error:", err));
+            }
         } else {
-            wavesurfer.current.pause();
+            if (!globalAudio.paused) {
+                globalAudio.pause();
+            }
         }
     }, [isPlaying]);
 
     // Handle Volume
     useEffect(() => {
-        if (!wavesurfer.current) return;
-        wavesurfer.current.setVolume(volume);
+        if (!globalAudio) return;
+        globalAudio.volume = volume;
     }, [volume]);
 
-    // Load Track
+    // Load Track if currentBeat changes while Player is already visible
     useEffect(() => {
-        if (!currentBeat || !wavesurfer.current) return;
-        setCurrentTime(0);
-        setIsReady(false);
-        wavesurfer.current.seekTo(0);
-        const audioUrl = `${encodeURI(currentBeat.audio_path)}?t=${Date.now()}`;
-        const loadPromise = wavesurfer.current.load(audioUrl);
-        if (loadPromise && typeof loadPromise.then === 'function') {
-            loadPromise.catch((err) => {
-                if (err.name === 'AbortError' || err.message?.includes('aborted') || err.name === 'DOMException') return;
-                console.error("Load error", err);
-                addToast("Failed to load audio URL", "error");
-            });
+        if (!currentBeat || !globalAudio) return;
+        const targetSrc = encodeURI(currentBeat.audio_path);
+        const currentSrc = globalAudio.src;
+
+        if (!currentSrc || (!currentSrc.includes(targetSrc) && !currentSrc.includes(currentBeat.audio_path))) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setCurrentTime(0);
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setIsReady(false);
+            globalAudio.src = currentBeat.audio_path;
+            globalAudio.load();
+            if (isPlaying) {
+                globalAudio.play().catch(err => console.error("Load play error:", err));
+            }
+            if (wavesurfer.current) {
+                wavesurfer.current.load(currentBeat.audio_path).catch(() => {});
+            }
+        } else {
+            if (globalAudio.duration) {
+                // eslint-disable-next-line react-hooks/set-state-in-effect
+                setDuration(globalAudio.duration);
+                // eslint-disable-next-line react-hooks/set-state-in-effect
+                setIsReady(true);
+            }
+            // Ensure wavesurfer media is synchronized if pre-loaded
+            if (wavesurfer.current && !wavesurfer.current.getDuration()) {
+                wavesurfer.current.load(currentBeat.audio_path).catch(() => {});
+            }
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentBeat]);
 
     if (!currentBeat) return null;
